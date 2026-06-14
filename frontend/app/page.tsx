@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import { donationsApi, Donation, Summary } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  PieChart, Pie, Cell, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  ResponsiveContainer, Legend,
+} from 'recharts';
 
 export default function Dashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -24,7 +29,6 @@ export default function Dashboard() {
         setDonations(donationsRes.data);
         setVerify(verifyRes.data);
       } catch (err) {
-        console.error('API Error:', err);
         setError('Gagal koneksi ke server: ' + String(err));
       } finally {
         setLoading(false);
@@ -39,6 +43,35 @@ export default function Dashboard() {
       currency: 'IDR',
       maximumFractionDigits: 0,
     }).format(n);
+
+  const pieData = summary
+    ? [
+        { name: 'Dana Masuk', value: summary.totalIn, color: '#22c55e' },
+        { name: 'Dana Keluar', value: summary.totalOut, color: '#ef4444' },
+      ]
+    : [];
+
+  const barData = donations.reduce(
+    (acc: { name: string; masuk: number; keluar: number }[], d) => {
+      const date = new Date(d.createdAt).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+      });
+      const existing = acc.find((i) => i.name === date);
+      if (existing) {
+        if (d.type === 'in') existing.masuk += Number(d.amount);
+        else existing.keluar += Number(d.amount);
+      } else {
+        acc.push({
+          name: date,
+          masuk: d.type === 'in' ? Number(d.amount) : 0,
+          keluar: d.type === 'out' ? Number(d.amount) : 0,
+        });
+      }
+      return acc;
+    },
+    []
+  );
 
   if (loading)
     return (
@@ -57,6 +90,8 @@ export default function Dashboard() {
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-5xl mx-auto">
+
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Transparansi Dana Wakaf</h1>
           <p className="text-gray-500 mt-1">
@@ -71,14 +106,17 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Summary Cards */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-green-600 text-sm">Total Dana Masuk</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-green-700">{formatRupiah(summary.totalIn)}</p>
+                <p className="text-2xl font-bold text-green-700">
+                  {formatRupiah(summary.totalIn)}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -86,7 +124,9 @@ export default function Dashboard() {
                 <CardTitle className="text-red-600 text-sm">Total Dana Keluar</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-red-700">{formatRupiah(summary.totalOut)}</p>
+                <p className="text-2xl font-bold text-red-700">
+                  {formatRupiah(summary.totalOut)}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -94,15 +134,80 @@ export default function Dashboard() {
                 <CardTitle className="text-blue-600 text-sm">Saldo Tersedia</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-blue-700">{formatRupiah(summary.balance)}</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatRupiah(summary.balance)}
+                </p>
               </CardContent>
             </Card>
           </div>
         )}
 
+        {/* Charts */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Distribusi Dana</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    dataKey="value"
+                    paddingAngle={3}
+                  >
+                    {pieData.map((entry, i) => (
+                      <Cell key={i} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v) => formatRupiah(Number(v))}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Transaksi per Hari</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={barData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    tickFormatter={(v) =>
+                      v >= 1000000
+                        ? `${v / 1000000}jt`
+                        : v >= 1000
+                        ? `${v / 1000}rb`
+                        : String(v)
+                    }
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip formatter={(v) => formatRupiah(Number(v))} />
+                  <Legend />
+                  <Bar dataKey="masuk" name="Masuk" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="keluar" name="Keluar" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Transaction Table */}
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle className="text-lg">Riwayat Transaksi ({donations.length})</CardTitle>
+            <CardTitle className="text-lg">
+              Riwayat Transaksi ({donations.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -149,12 +254,8 @@ export default function Dashboard() {
         </Card>
 
         <div className="flex gap-4 text-sm">
-          <a href="/admin" className="text-blue-600 hover:underline">
-            → Admin Panel
-          </a>
-          <a href="/audit" className="text-blue-600 hover:underline">
-            → Audit Blockchain
-          </a>
+          <a href="/admin" className="text-blue-600 hover:underline">→ Admin Panel</a>
+          <a href="/audit" className="text-blue-600 hover:underline">→ Audit Blockchain</a>
         </div>
       </div>
     </main>
