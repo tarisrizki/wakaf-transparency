@@ -20,8 +20,10 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, ArrowUpRight, ArrowDownRight, Wallet } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [verify, setVerify] = useState<{ valid: boolean } | null>(null);
@@ -288,7 +290,11 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {donations.length > 0 ? donations.map((d) => (
-                    <TableRow key={d.id} className="hover:bg-muted/30">
+                    <TableRow 
+                      key={d.id} 
+                      className="hover:bg-muted/30 cursor-pointer"
+                      onClick={() => router.push(`/transaction/${d.id}`)}
+                    >
                       <TableCell className="font-medium text-muted-foreground text-xs">
                         {new Date(d.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </TableCell>

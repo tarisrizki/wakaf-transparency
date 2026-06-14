@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Body, UnauthorizedException,
+  Controller, Get, Post, Body, UnauthorizedException, Param,
 } from '@nestjs/common';
 import { DonationsService, CreateDonationDto } from './donations.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
@@ -36,6 +36,11 @@ export class DonationsController {
   @Get()
   findAll() {
     return this.donationsService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.donationsService.findOne(id);
   }
 
   @Get('summary')

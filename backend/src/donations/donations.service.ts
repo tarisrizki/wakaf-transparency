@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
@@ -54,6 +54,16 @@ export class DonationsService {
 
   async findAll(): Promise<Donation[]> {
     return this.donationRepository.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findOne(id: string): Promise<{ donation: Donation; block: any }> {
+    const donation = await this.donationRepository.findOne({ where: { id } });
+    if (!donation) {
+      throw new NotFoundException('Donation not found');
+    }
+    const chain = await this.blockchainService.getChain();
+    const block = chain.find((b) => b.data && (b.data as any).transactionId === id);
+    return { donation, block: block || null };
   }
 
   async getSummary() {
