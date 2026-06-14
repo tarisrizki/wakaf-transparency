@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { donationsApi, Block } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
+import { Link as LinkIcon, ShieldAlert, ShieldCheck, Database } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AuditPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
@@ -17,54 +20,112 @@ export default function AuditPage() {
     ]).finally(() => setLoading(false));
   }, []);
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, x: -10 },
+    show: { opacity: 1, x: 0 }
+  };
+
   if (loading) return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400">Memuat audit trail...</p>
+    <main className="flex-1 flex items-center justify-center p-6">
+      <div className="flex flex-col items-center gap-4 text-muted-foreground">
+        <Database className="w-8 h-8 animate-pulse text-primary" />
+        <p className="font-medium">Mensinkronisasi dengan jaringan Blockchain...</p>
+      </div>
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
+    <main className="flex-1 p-6 md:p-12">
       <div className="max-w-4xl mx-auto">
-        <a href="/" className="text-sm text-blue-600 hover:underline mb-4 block">← Kembali ke Dashboard</a>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Audit Trail Blockchain</h1>
-          <p className="text-sm text-gray-500 mt-1">Setiap blok terhubung dengan hash blok sebelumnya</p>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Blockchain Audit Trail</h1>
+              <p className="text-muted-foreground mt-1 text-sm">Menampilkan raw data dari ledger terdistribusi. Hash blok terhubung dengan hash blok sebelumnya menggunakan SHA-256 kriptografi.</p>
+            </div>
+          </div>
+          
           {verify && (
-            <Badge className={`mt-2 ${verify.valid ? 'bg-green-500' : 'bg-red-500'}`}>
-              {verify.valid
-                ? '🔒 Semua blok valid — tidak ada manipulasi terdeteksi'
-                : `⚠️ Manipulasi terdeteksi di blok #${verify.brokenAt}`}
-            </Badge>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          {blocks.map((block, i) => (
-            <Card key={block.id} className={`font-mono text-xs ${i === 0 ? 'border-blue-200' : ''}`}>
-              <CardHeader className="pb-1 pt-3 px-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold">
-                    {i === 0 ? '🔵 ' : ''}Block #{block.blockIndex}
-                  </CardTitle>
-                  <Badge variant="outline" className="text-xs">{block.action}</Badge>
+            <Card className={`mt-6 border shadow-sm ${verify.valid ? 'border-primary/20 bg-primary/5' : 'border-destructive/20 bg-destructive/5'}`}>
+              <CardContent className="p-4 flex items-center gap-3">
+                {verify.valid ? (
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                ) : (
+                  <ShieldAlert className="w-6 h-6 text-destructive" />
+                )}
+                <div>
+                  <h3 className={`font-semibold ${verify.valid ? 'text-primary' : 'text-destructive'}`}>
+                    {verify.valid ? 'Verifikasi Kriptografis Berhasil' : 'Peringatan: Integritas Data Rusak'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {verify.valid 
+                      ? 'Semua blok valid dan tidak ada manipulasi data yang terdeteksi dalam jaringan.'
+                      : `Sistem mendeteksi adanya manipulasi atau inkonsistensi hash dimulai dari blok #${verify.brokenAt}.`
+                    }
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-3 space-y-1 text-gray-500">
-                <p><span className="text-gray-400">Hash:     </span>
-                  <span className="text-green-600">{block.hash}</span></p>
-                <p><span className="text-gray-400">Previous: </span>{block.previousHash}</p>
-                <p><span className="text-gray-400">Actor:    </span>{block.actor}</p>
-                <p><span className="text-gray-400">Time:     </span>
-                  {new Date(block.createdAt).toLocaleString('id-ID')}</p>
               </CardContent>
             </Card>
+          )}
+        </motion.div>
+
+        <motion.div 
+          className="space-y-4 relative"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          {/* Vertical connecting line */}
+          <div className="absolute left-[23px] top-6 bottom-6 w-0.5 bg-border/60 z-0 hidden md:block"></div>
+
+          {blocks.map((block, i) => (
+            <motion.div key={block.id} variants={item} className="relative z-10">
+              <Card className={`font-mono text-xs overflow-hidden shadow-sm transition-all hover:shadow-md ${i === 0 ? 'border-primary/30 ring-1 ring-primary/20' : 'border-border'}`}>
+                <CardHeader className="py-3 px-5 bg-muted/40 border-b flex flex-row items-center justify-between space-y-0">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-primary animate-pulse' : 'bg-muted-foreground/30'}`}></div>
+                    <CardTitle className="text-sm font-bold text-foreground">
+                      Block #{block.blockIndex}
+                    </CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-semibold bg-background">{block.action}</Badge>
+                </CardHeader>
+                <CardContent className="p-5 grid grid-cols-1 md:grid-cols-[100px_1fr] gap-x-4 gap-y-3 text-muted-foreground">
+                  <div className="font-semibold text-foreground/70">Hash</div>
+                  <div className="break-all text-primary font-bold">{block.hash}</div>
+                  
+                  <div className="font-semibold text-foreground/70">Prev Hash</div>
+                  <div className="break-all">{block.previousHash}</div>
+                  
+                  <div className="font-semibold text-foreground/70">Actor</div>
+                  <div>{block.actor}</div>
+                  
+                  <div className="font-semibold text-foreground/70">Timestamp</div>
+                  <div>{new Date(block.createdAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'long' })}</div>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
 
           {blocks.length === 0 && (
-            <p className="text-center text-gray-400 py-8">Belum ada transaksi yang tercatat</p>
+            <div className="text-center py-12 text-muted-foreground">
+              <Database className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p>Belum ada data block yang terekam di jaringan.</p>
+            </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </main>
   );

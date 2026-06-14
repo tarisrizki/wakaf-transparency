@@ -2,13 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { donationsApi, Donation, Summary } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   PieChart, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, Legend,
 } from 'recharts';
+import { motion } from 'framer-motion';
+import { ShieldCheck, ShieldAlert, ArrowUpRight, ArrowDownRight, Wallet } from 'lucide-react';
 
 export default function Dashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -46,8 +57,8 @@ export default function Dashboard() {
 
   const pieData = summary
     ? [
-        { name: 'Dana Masuk', value: summary.totalIn, color: '#22c55e' },
-        { name: 'Dana Keluar', value: summary.totalOut, color: '#ef4444' },
+        { name: 'Dana Masuk', value: summary.totalIn, color: 'hsl(158, 64%, 40%)' },
+        { name: 'Dana Keluar', value: summary.totalOut, color: 'hsl(0, 84%, 60%)' },
       ]
     : [];
 
@@ -73,92 +84,140 @@ export default function Dashboard() {
     []
   );
 
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   if (loading)
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400">Memuat data...</p>
+      <main className="flex-1 p-6 md:p-12 max-w-6xl mx-auto w-full space-y-8">
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-[300px]" />
+          <Skeleton className="h-5 w-[450px]" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
+        </div>
+        <Skeleton className="h-[400px] w-full" />
       </main>
     );
 
   if (error)
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-red-500 text-sm max-w-md text-center">{error}</p>
+      <main className="flex-1 flex items-center justify-center p-6">
+        <Card className="max-w-md w-full border-destructive/50 bg-destructive/10">
+          <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
+            <ShieldAlert className="h-12 w-12 text-destructive" />
+            <p className="text-destructive font-medium">{error}</p>
+          </CardContent>
+        </Card>
       </main>
     );
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Transparansi Dana Wakaf</h1>
-          <p className="text-gray-500 mt-1">
-            Semua transaksi tercatat di blockchain — tidak bisa dimanipulasi
-          </p>
-          {verify && (
-            <Badge className={`mt-2 ${verify.valid ? 'bg-green-500' : 'bg-red-500'}`}>
-              {verify.valid
-                ? '🔒 Blockchain Valid — Tidak Ada Manipulasi'
-                : '⚠️ Blockchain Rusak — Ada Manipulasi'}
+    <motion.main 
+      className="flex-1 p-6 md:p-12 max-w-6xl mx-auto w-full"
+      variants={container}
+      initial="hidden"
+      animate="show"
+    >
+      {/* Header */}
+      <motion.div variants={item} className="mb-10 space-y-4">
+        <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
+          Transparansi Dana <span className="text-primary">Wakaf</span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">
+          Setiap transaksi tercatat secara permanen di dalam jaringan Blockchain. Kami menjamin transparansi 100% dan integritas data yang tidak bisa dimanipulasi oleh siapapun.
+        </p>
+        {verify && (
+          <div className="flex items-center gap-2 mt-4">
+            <Badge variant="outline" className={`py-1.5 px-3 text-sm font-medium ${verify.valid ? 'bg-primary/10 text-primary border-primary/20' : 'bg-destructive/10 text-destructive border-destructive/20'}`}>
+              {verify.valid ? (
+                <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Blockchain Valid — Data Aman</span>
+              ) : (
+                <span className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> Peringatan — Integritas Data Rusak</span>
+              )}
             </Badge>
-          )}
-        </div>
-
-        {/* Summary Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-green-600 text-sm">Total Dana Masuk</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-green-700">
-                  {formatRupiah(summary.totalIn)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-red-600 text-sm">Total Dana Keluar</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-red-700">
-                  {formatRupiah(summary.totalOut)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-blue-600 text-sm">Saldo Tersedia</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-blue-700">
-                  {formatRupiah(summary.balance)}
-                </p>
-              </CardContent>
-            </Card>
           </div>
         )}
+      </motion.div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Distribusi Dana</CardTitle>
+      {/* Summary Cards */}
+      {summary && (
+        <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Dana Masuk</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
+              <div className="text-3xl font-bold text-foreground">
+                {formatRupiah(summary.totalIn)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Penyaluran</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                {formatRupiah(summary.totalOut)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-sm hover:shadow-md transition-shadow bg-primary text-primary-foreground border-none">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-medium text-primary-foreground/80">Saldo Wakaf Tersedia</CardTitle>
+              <Wallet className="h-4 w-4 text-primary-foreground/80" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                {formatRupiah(summary.balance)}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Charts */}
+      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Distribusi Dana</CardTitle>
+            <CardDescription>Perbandingan total pemasukan dan penyaluran wakaf</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={pieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
+                    innerRadius={65}
+                    outerRadius={90}
                     dataKey="value"
-                    paddingAngle={3}
+                    paddingAngle={5}
+                    stroke="none"
                   >
                     {pieData.map((entry, i) => (
                       <Cell key={i} fill={entry.color} />
@@ -166,98 +225,100 @@ export default function Dashboard() {
                   </Pie>
                   <Tooltip
                     formatter={(v) => formatRupiah(Number(v))}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Legend />
+                  <Legend iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Transaksi per Hari</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis
-                    tickFormatter={(v) =>
-                      v >= 1000000
-                        ? `${v / 1000000}jt`
-                        : v >= 1000
-                        ? `${v / 1000}rb`
-                        : String(v)
-                    }
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip formatter={(v) => formatRupiah(Number(v))} />
-                  <Legend />
-                  <Bar dataKey="masuk" name="Masuk" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="keluar" name="Keluar" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Transaction Table */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Riwayat Transaksi ({donations.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-gray-400 text-xs uppercase">
-                    <th className="text-left py-2">Tanggal</th>
-                    <th className="text-left py-2">Nama</th>
-                    <th className="text-left py-2">Keterangan</th>
-                    <th className="text-left py-2">Jenis</th>
-                    <th className="text-right py-2">Jumlah</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {donations.map((d) => (
-                    <tr key={d.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 text-gray-500 text-xs">
-                        {new Date(d.createdAt).toLocaleDateString('id-ID')}
-                      </td>
-                      <td className="py-3 font-medium">{d.donorName}</td>
-                      <td className="py-3 text-gray-500">{d.description}</td>
-                      <td className="py-3">
-                        <Badge
-                          variant={d.type === 'in' ? 'default' : 'destructive'}
-                          className="text-xs"
-                        >
-                          {d.type === 'in' ? '↑ Masuk' : '↓ Keluar'}
-                        </Badge>
-                      </td>
-                      <td
-                        className={`py-3 text-right font-semibold ${
-                          d.type === 'in' ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {d.type === 'in' ? '+' : '-'}
-                        {formatRupiah(Number(d.amount))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex gap-4 text-sm">
-          <a href="/admin" className="text-blue-600 hover:underline">→ Admin Panel</a>
-          <a href="/audit" className="text-blue-600 hover:underline">→ Audit Blockchain</a>
-        </div>
-      </div>
-    </main>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Aktivitas Transaksi</CardTitle>
+            <CardDescription>Tren dana masuk dan keluar per hari</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    tickFormatter={(v) => v >= 1000000 ? `${v / 1000000}jt` : v >= 1000 ? `${v / 1000}k` : String(v)}
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip 
+                    formatter={(v) => formatRupiah(Number(v))}
+                    cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="masuk" name="Masuk" fill="hsl(158, 64%, 40%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="keluar" name="Keluar" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Transaction Table */}
+      <motion.div variants={item}>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>Riwayat Transaksi Terbaru</CardTitle>
+            <CardDescription>Menampilkan {donations.length} transaksi terakhir yang tercatat di Blockchain.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="w-[120px]">Tanggal</TableHead>
+                    <TableHead>Pihak / Donatur</TableHead>
+                    <TableHead>Keterangan</TableHead>
+                    <TableHead className="w-[120px]">Jenis</TableHead>
+                    <TableHead className="text-right">Jumlah</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donations.length > 0 ? donations.map((d) => (
+                    <TableRow key={d.id} className="hover:bg-muted/30">
+                      <TableCell className="font-medium text-muted-foreground text-xs">
+                        {new Date(d.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </TableCell>
+                      <TableCell className="font-semibold">{d.donorName}</TableCell>
+                      <TableCell className="text-muted-foreground">{d.description}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={d.type === 'in' ? 'default' : 'destructive'}
+                          className={d.type === 'in' ? 'bg-primary/10 text-primary hover:bg-primary/20 shadow-none border-0' : 'bg-destructive/10 text-destructive hover:bg-destructive/20 shadow-none border-0'}
+                        >
+                          {d.type === 'in' ? '↑ Masuk' : '↓ Keluar'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className={`text-right font-bold ${d.type === 'in' ? 'text-primary' : 'text-destructive'}`}>
+                        {d.type === 'in' ? '+' : '-'}
+                        {formatRupiah(Number(d.amount))}
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        Belum ada transaksi yang tercatat.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.main>
   );
 }
