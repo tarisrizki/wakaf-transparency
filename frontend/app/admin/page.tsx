@@ -121,7 +121,7 @@ export default function AdminPage() {
                   <Label className="text-sm font-semibold text-foreground/80">Jenis Transaksi <span className="text-destructive">*</span></Label>
                   <Select
                     value={form.type}
-                    onValueChange={(val) => setForm({ ...form, type: val })}
+                    onValueChange={(val) => setForm({ ...form, type: val as string })}
                   >
                     <SelectTrigger className="h-12 bg-background">
                       <SelectValue placeholder="Pilih Jenis" />
