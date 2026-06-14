@@ -67,19 +67,29 @@ export class DonationsService {
   }
 
   async getSummary() {
-    const donations = await this.donationRepository.find();
-    const totalIn = donations
-      .filter((d) => d.type === DonationType.IN)
-      .reduce((sum, d) => sum + Number(d.amount), 0);
-    const totalOut = donations
-      .filter((d) => d.type === DonationType.OUT)
-      .reduce((sum, d) => sum + Number(d.amount), 0);
+    const result = await this.donationRepository
+      .createQueryBuilder('donation')
+      .select('donation.type', 'type')
+      .addSelect('SUM(donation.amount)', 'total')
+      .addSelect('COUNT(donation.id)', 'count')
+      .groupBy('donation.type')
+      .getRawMany();
+
+    let totalIn = 0;
+    let totalOut = 0;
+    let transactions = 0;
+
+    result.forEach((row) => {
+      transactions += Number(row.count);
+      if (row.type === DonationType.IN) totalIn += Number(row.total);
+      if (row.type === DonationType.OUT) totalOut += Number(row.total);
+    });
 
     return {
       totalIn,
       totalOut,
       balance: totalIn - totalOut,
-      transactions: donations.length,
+      transactions,
     };
   }
 }
