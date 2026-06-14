@@ -43,8 +43,15 @@ export interface Block {
   createdAt: string;
 }
 
+export interface DonationFilters {
+  search?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export const donationsApi = {
-  getAll: (filters?: any) => api.get<Donation[]>('/donations', { params: filters }),
+  getAll: (filters?: DonationFilters) => api.get<Donation[]>('/donations', { params: filters }),
   getById: (id: string) => api.get<{ donation: Donation; block: Block | null }>(`/donations/${id}`),
   getSummary: () => api.get<Summary>('/donations/summary'),
   getAudit: () => api.get<Block[]>('/donations/audit'),

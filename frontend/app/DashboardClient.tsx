@@ -1,33 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { donationsApi, Donation, Summary } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { donationsApi, Donation, Summary, DonationFilters } from '@/lib/api';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  PieChart, Pie, Cell, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  ResponsiveContainer, Legend,
-} from 'recharts';
 import { motion } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ArrowUpRight, ArrowDownRight, Wallet, Search, Filter, Loader2, X, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { ShieldCheck, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { io } from 'socket.io-client';
+
+import SummaryCards from '@/components/dashboard/SummaryCards';
+import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import FilterBar from '@/components/dashboard/FilterBar';
+import TransactionTable from '@/components/dashboard/TransactionTable';
 
 export default function DashboardClient({ 
   initialSummary, 
@@ -45,14 +33,11 @@ export default function DashboardClient({
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    // Remove /api from NEXT_PUBLIC_API_URL to get the root host for socket.io
     const socketUrl = apiUrl.replace(/\/api$/, '');
     const socket = io(socketUrl);
     
     socket.on('donation_created', (newDonation: Donation) => {
-      // Add new donation to the top
       setDonations((prev) => [newDonation, ...prev]);
-      // Fetch updated summary
       donationsApi.getSummary().then(res => setSummary(res.data)).catch(console.error);
     });
 
@@ -73,7 +58,7 @@ export default function DashboardClient({
   const applyFilter = async () => {
     setIsLoading(true);
     try {
-      const filters: any = {};
+      const filters: DonationFilters = {};
       if (search) filters.search = search;
       if (filterType !== 'all') filters.type = filterType;
       if (startDate) filters.startDate = startDate;
@@ -81,7 +66,7 @@ export default function DashboardClient({
       
       const res = await donationsApi.getAll(filters);
       setDonations(res.data);
-      setCurrentPage(1); // Reset page on new filter
+      setCurrentPage(1);
     } catch (error) {
       console.error('Failed to apply filter', error);
     } finally {
@@ -99,7 +84,7 @@ export default function DashboardClient({
     try {
       const res = await donationsApi.getAll({});
       setDonations(res.data);
-      setCurrentPage(1); // Reset page on reset
+      setCurrentPage(1);
     } catch (error) {
       console.error('Failed to reset filter', error);
     } finally {
@@ -138,7 +123,6 @@ export default function DashboardClient({
     doc.setTextColor(100);
     doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 22);
 
-    // Add financial summary
     if (summary) {
       doc.setFontSize(11);
       doc.setTextColor(20);
@@ -163,48 +147,17 @@ export default function DashboardClient({
       body: tableData,
       theme: 'grid',
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [22, 163, 74] }, // match primary color
+      headStyles: { fillColor: [22, 163, 74] },
     });
 
     doc.save("Laporan_Wakaf.pdf");
   };
 
-  const pieData = summary
-    ? [
-        { name: 'Dana Masuk', value: summary.totalIn, color: 'hsl(158, 64%, 40%)' },
-        { name: 'Dana Keluar', value: summary.totalOut, color: 'hsl(0, 84%, 60%)' },
-      ]
-    : [];
-
-  const barData = initialDonations.reduce(
-    (acc: { name: string; masuk: number; keluar: number }[], d) => {
-      const date = new Date(d.createdAt).toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-      });
-      const existing = acc.find((i) => i.name === date);
-      if (existing) {
-        if (d.type === 'in') existing.masuk += Number(d.amount);
-        else existing.keluar += Number(d.amount);
-      } else {
-        acc.push({
-          name: date,
-          masuk: d.type === 'in' ? Number(d.amount) : 0,
-          keluar: d.type === 'out' ? Number(d.amount) : 0,
-        });
-      }
-      return acc;
-    },
-    []
-  );
-
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.1 }
     }
   };
 
@@ -226,7 +179,6 @@ export default function DashboardClient({
       initial="hidden"
       animate="show"
     >
-      {/* Header */}
       <motion.div variants={item} className="mb-10 space-y-4">
         <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
           Transparansi Dana <span className="text-primary">Wakaf</span>
@@ -247,277 +199,39 @@ export default function DashboardClient({
         )}
       </motion.div>
 
-      {/* Summary Cards */}
-      {summary && (
-        <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Dana Masuk</CardTitle>
-              <ArrowUpRight className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {formatRupiah(summary.totalIn)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Penyaluran</CardTitle>
-              <ArrowDownRight className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {formatRupiah(summary.totalOut)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm hover:shadow-md transition-shadow bg-primary text-primary-foreground border-none">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-primary-foreground/80">Saldo Wakaf Tersedia</CardTitle>
-              <Wallet className="h-4 w-4 text-primary-foreground/80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {formatRupiah(summary.balance)}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+      <SummaryCards summary={summary} formatRupiah={formatRupiah} itemVariant={item} />
+      <DashboardCharts summary={summary} initialDonations={initialDonations} formatRupiah={formatRupiah} itemVariant={item} />
 
-      {/* Charts */}
-      <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Distribusi Dana</CardTitle>
-            <CardDescription>Perbandingan total pemasukan dan penyaluran wakaf</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={90}
-                    dataKey="value"
-                    paddingAngle={5}
-                    stroke="none"
-                  >
-                    {pieData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v) => formatRupiah(Number(v))}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend iconType="circle" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Aktivitas Transaksi</CardTitle>
-            <CardDescription>Tren dana masuk dan keluar per hari</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    tickFormatter={(v) => v >= 1000000 ? `${v / 1000000}jt` : v >= 1000 ? `${v / 1000}k` : String(v)}
-                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    formatter={(v) => formatRupiah(Number(v))}
-                    cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend iconType="circle" />
-                  <Bar dataKey="masuk" name="Masuk" fill="hsl(158, 64%, 40%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  <Bar dataKey="keluar" name="Keluar" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Transaction Table */}
       <motion.div variants={item}>
         <Card className="shadow-sm">
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <CardTitle>Riwayat Transaksi Terbaru</CardTitle>
-                <CardDescription>Menampilkan {donations.length} transaksi yang tercatat di Blockchain.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={exportToExcel} size="sm" className="shadow-sm hover:text-primary transition-colors">
-                  <FileSpreadsheet className="h-4 w-4 mr-2 text-green-600" />
-                  Excel
-                </Button>
-                <Button variant="outline" onClick={exportToPDF} size="sm" className="shadow-sm hover:text-destructive transition-colors">
-                  <FileText className="h-4 w-4 mr-2 text-red-500" />
-                  PDF
-                </Button>
-              </div>
-            </div>
-            
-            <div className="mt-6 bg-muted/10 rounded-xl border p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground mb-4">
-                <Filter className="h-4 w-4" /> Filter & Pencarian
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="md:col-span-4 space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cari Donatur</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Masukkan nama donatur..."
-                      className="pl-9 bg-background shadow-sm"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && applyFilter()}
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Jenis Transaksi</label>
-                  <Select value={filterType} onValueChange={(val) => setFilterType(val || 'all')}>
-                    <SelectTrigger className="w-full bg-background shadow-sm">
-                      <SelectValue placeholder="Semua Jenis" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Jenis</SelectItem>
-                      <SelectItem value="in">Dana Masuk</SelectItem>
-                      <SelectItem value="out">Dana Keluar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="md:col-span-3 space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Rentang Tanggal</label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="date"
-                      className="w-full bg-background text-sm shadow-sm"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                    <span className="text-muted-foreground text-xs">-</span>
-                    <Input
-                      type="date"
-                      className="w-full bg-background text-sm shadow-sm"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 flex items-end gap-2">
-                  <Button onClick={applyFilter} disabled={isLoading} className="w-full shadow-sm">
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Filter className="h-4 w-4 mr-2" />}
-                    Cari
-                  </Button>
-                  {(search || filterType !== 'all' || startDate || endDate) && (
-                    <Button variant="outline" onClick={resetFilter} disabled={isLoading} className="px-3 shadow-sm bg-background hover:bg-destructive hover:text-destructive-foreground transition-colors" title="Reset Filter">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow>
-                    <TableHead className="w-[120px]">Tanggal</TableHead>
-                    <TableHead>Pihak / Donatur</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead>Keterangan</TableHead>
-                    <TableHead className="w-[120px]">Jenis</TableHead>
-                    <TableHead className="text-right">Jumlah</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedDonations.length > 0 ? paginatedDonations.map((d) => (
-                    <TableRow 
-                      key={d.id} 
-                      className="hover:bg-muted/30 cursor-pointer"
-                      onClick={() => router.push(`/transaction/${d.id}`)}
-                    >
-                      <TableCell className="font-medium text-muted-foreground text-xs">
-                        {new Date(d.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </TableCell>
-                      <TableCell className="font-semibold">{d.donorName}</TableCell>
-                      <TableCell className="capitalize text-muted-foreground">{d.category || '-'}</TableCell>
-                      <TableCell className="text-muted-foreground">{d.description}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={d.type === 'in' ? 'default' : 'destructive'}
-                          className={d.type === 'in' ? 'bg-primary/10 text-primary hover:bg-primary/20 shadow-none border-0' : 'bg-destructive/10 text-destructive hover:bg-destructive/20 shadow-none border-0'}
-                        >
-                          {d.type === 'in' ? '↑ Masuk' : '↓ Keluar'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className={`text-right font-bold ${d.type === 'in' ? 'text-primary' : 'text-destructive'}`}>
-                        {d.type === 'in' ? '+' : '-'}
-                        {formatRupiah(Number(d.amount))}
-                      </TableCell>
-                    </TableRow>
-                  )) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                        Belum ada transaksi yang tercatat.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, donations.length)} dari {donations.length} transaksi
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Sebelumnya
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Selanjutnya
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
+          <div className="p-6">
+            <FilterBar 
+              donationsLength={donations.length}
+              search={search}
+              setSearch={setSearch}
+              filterType={filterType}
+              setFilterType={setFilterType}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              applyFilter={applyFilter}
+              resetFilter={resetFilter}
+              isLoading={isLoading}
+              exportToExcel={exportToExcel}
+              exportToPDF={exportToPDF}
+            />
+            <TransactionTable 
+              paginatedDonations={paginatedDonations}
+              donationsLength={donations.length}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalPages={totalPages}
+              formatRupiah={formatRupiah}
+              router={router}
+            />
+          </div>
         </Card>
       </motion.div>
     </motion.main>

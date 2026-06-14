@@ -1,4 +1,4 @@
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 
 @WebSocketGateway({
@@ -12,5 +12,10 @@ export class DonationsGateway {
 
   notifyNewDonation(donation: any) {
     this.server.emit('donation_created', donation);
+  }
+
+  @SubscribeMessage('ping')
+  handlePing() {
+    return { event: 'pong', data: 'connected' };
   }
 }
