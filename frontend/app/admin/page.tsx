@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { donationsApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,26 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function AdminPage() {
-  const [ready, setReady] = useState(false);
   const [form, setForm] = useState({
     donorName: '', amount: '', type: 'in', description: '',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('admin_token');
-    if (!token) {
-      window.location.replace('/login');
-      return;
-    }
-    setReady(true);
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    window.location.replace('/login');
+    document.cookie = 'admin_token=; path=/; max-age=0';
+    window.location.href = '/login';
   };
 
   const handleSubmit = async () => {
@@ -51,8 +40,6 @@ export default function AdminPage() {
     }
     setLoading(false);
   };
-
-  if (!ready) return null;
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">

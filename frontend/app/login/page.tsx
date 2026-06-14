@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const handleLogin = async () => {
     if (!password) return;
@@ -23,8 +21,8 @@ export default function LoginPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/donations/admin-login`,
         { password },
       );
-      localStorage.setItem('admin_token', res.data.token);
-      router.push('/admin');
+      document.cookie = `admin_token=${res.data.token}; path=/; max-age=86400`;
+      window.location.href = '/admin';
     } catch {
       setError('Password salah. Coba lagi.');
     }
