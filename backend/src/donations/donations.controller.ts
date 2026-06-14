@@ -38,11 +38,6 @@ export class DonationsController {
     return this.donationsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.donationsService.findOne(id);
-  }
-
   @Get('summary')
   getSummary() {
     return this.donationsService.getSummary();
@@ -56,5 +51,10 @@ export class DonationsController {
   @Get('verify')
   verifyChain() {
     return this.blockchainService.verifyChain();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.donationsService.findOne(id);
   }
 }
