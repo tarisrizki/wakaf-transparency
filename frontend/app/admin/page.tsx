@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { donationsApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,26 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function AdminPage() {
+  const [ready, setReady] = useState(false);
   const [form, setForm] = useState({
     donorName: '', amount: '', type: 'in', description: '',
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
-  const [isAuth, setIsAuth] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const token = localStorage.getItem('admin_token');
     if (!token) {
-      window.location.href = '/login';
-    } else {
-      setIsAuth(true);
+      window.location.replace('/login');
+      return;
     }
+    setReady(true);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
-    router.push('/login');
+    window.location.replace('/login');
   };
 
   const handleSubmit = async () => {
@@ -53,23 +52,16 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  if (!isAuth) return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-400">Memeriksa autentikasi...</p>
-    </main>
-  );
+  if (!ready) return null;
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-lg mx-auto">
         <div className="flex justify-between items-center mb-6">
           <a href="/" className="text-sm text-blue-600 hover:underline">
-            ← Dashboard
+            Dashboard
           </a>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:underline"
-          >
+          <button onClick={handleLogout} className="text-sm text-red-500 hover:underline">
             Logout
           </button>
         </div>
