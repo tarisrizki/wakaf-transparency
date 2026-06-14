@@ -16,7 +16,7 @@ export class DonationsController {
   ) {}
 
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(RoleEnum.admin)
+  @Roles(RoleEnum.superadmin, RoleEnum.admin)
   @Post()
   async create(@Body() dto: CreateDonationDto) {
     try {

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
 import { Donation, DonationType } from './entities/donation.entity';
 import { BlockchainService } from '../blockchain/blockchain.service';
+import { DonationsGateway } from './donations.gateway';
 
 export class CreateDonationDto {
   @IsString()
@@ -30,6 +31,7 @@ export class DonationsService {
     @InjectRepository(Donation)
     private readonly donationRepository: Repository<Donation>,
     private readonly blockchainService: BlockchainService,
+    private readonly donationsGateway: DonationsGateway,
   ) {}
 
   async create(dto: CreateDonationDto): Promise<Donation> {
@@ -48,6 +50,8 @@ export class DonationsService {
       saved.type === DonationType.IN ? 'DONATION_IN' : 'FUND_OUT',
       saved.donorName,
     );
+
+    this.donationsGateway.notifyNewDonation(saved);
 
     return saved;
   }

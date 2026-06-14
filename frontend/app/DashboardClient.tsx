@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { io } from 'socket.io-client';
 
 export default function DashboardClient({ 
   initialSummary, 
@@ -38,9 +39,27 @@ export default function DashboardClient({
   initialVerify: { valid: boolean } | null 
 }) {
   const router = useRouter();
-  const [summary] = useState<Summary | null>(initialSummary);
+  const [summary, setSummary] = useState<Summary | null>(initialSummary);
   const [donations, setDonations] = useState<Donation[]>(initialDonations);
   const [verify] = useState<{ valid: boolean } | null>(initialVerify);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Remove /api from NEXT_PUBLIC_API_URL to get the root host for socket.io
+    const socketUrl = apiUrl.replace(/\/api$/, '');
+    const socket = io(socketUrl);
+    
+    socket.on('donation_created', (newDonation: Donation) => {
+      // Add new donation to the top
+      setDonations((prev) => [newDonation, ...prev]);
+      // Fetch updated summary
+      donationsApi.getSummary().then(res => setSummary(res.data)).catch(console.error);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
   
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -119,6 +138,17 @@ export default function DashboardClient({
     doc.setTextColor(100);
     doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 14, 22);
 
+    // Add financial summary
+    if (summary) {
+      doc.setFontSize(11);
+      doc.setTextColor(20);
+      doc.text("Ringkasan Keuangan", 14, 32);
+      doc.setFontSize(10);
+      doc.text(`Total Dana Masuk: ${formatRupiah(summary.totalIn)}`, 14, 38);
+      doc.text(`Total Dana Keluar: ${formatRupiah(summary.totalOut)}`, 14, 44);
+      doc.text(`Saldo Tersedia: ${formatRupiah(summary.balance)}`, 14, 50);
+    }
+
     const tableData = donations.map((d) => [
       new Date(d.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }),
       d.donorName,
@@ -128,7 +158,7 @@ export default function DashboardClient({
     ]);
 
     autoTable(doc, {
-      startY: 28,
+      startY: summary ? 58 : 28,
       head: [['Tanggal', 'Pihak / Donatur', 'Kategori', 'Jenis', 'Jumlah']],
       body: tableData,
       theme: 'grid',
