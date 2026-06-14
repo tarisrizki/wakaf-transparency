@@ -36,9 +36,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Transparansi Dana Wakaf
-          </p>
+          <p className="text-sm text-gray-500 mt-1">Transparansi Dana Wakaf</p>
         </div>
         <Card>
           <CardHeader>
@@ -61,11 +59,8 @@ export default function LoginPage() {
             <Button onClick={handleLogin} disabled={loading} className="w-full">
               {loading ? 'Memverifikasi...' : 'Masuk'}
             </Button>
-            
-              href="/"
-              className="block text-center text-sm text-blue-600 hover:underline"
-            >
-              ← Kembali ke Dashboard
+            <a href="/" className="block text-center text-sm text-blue-600 hover:underline">
+              Kembali ke Dashboard
             </a>
           </CardContent>
         </Card>
