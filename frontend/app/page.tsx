@@ -280,6 +280,7 @@ export default function Dashboard() {
                   <TableRow>
                     <TableHead className="w-[120px]">Tanggal</TableHead>
                     <TableHead>Pihak / Donatur</TableHead>
+                    <TableHead>Kategori</TableHead>
                     <TableHead>Keterangan</TableHead>
                     <TableHead className="w-[120px]">Jenis</TableHead>
                     <TableHead className="text-right">Jumlah</TableHead>
@@ -292,6 +293,7 @@ export default function Dashboard() {
                         {new Date(d.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </TableCell>
                       <TableCell className="font-semibold">{d.donorName}</TableCell>
+                      <TableCell className="capitalize text-muted-foreground">{d.category || '-'}</TableCell>
                       <TableCell className="text-muted-foreground">{d.description}</TableCell>
                       <TableCell>
                         <Badge
@@ -308,7 +310,7 @@ export default function Dashboard() {
                     </TableRow>
                   )) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                         Belum ada transaksi yang tercatat.
                       </TableCell>
                     </TableRow>

@@ -25,6 +25,9 @@ export class Donation {
   @Column({ type: 'enum', enum: DonationType })
   type: DonationType;
 
+  @Column({ length: 100, nullable: true })
+  category: string;
+
   @Column({ length: 500, nullable: true })
   description: string;
 

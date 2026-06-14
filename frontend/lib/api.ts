@@ -10,6 +10,7 @@ export interface Donation {
   donorName: string;
   amount: string;
   type: 'in' | 'out';
+  category: string;
   description: string;
   createdAt: string;
 }
@@ -41,6 +42,7 @@ export const donationsApi = {
     donorName: string;
     amount: number;
     type: 'in' | 'out';
+    category: string;
     description: string;
   }) => api.post<Donation>('/donations', data),
 };

@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 
 export default function AdminPage() {
   const [form, setForm] = useState({
-    donorName: '', amount: '', type: 'in', description: '',
+    donorName: '', amount: '', type: 'in', category: '', description: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -39,12 +39,13 @@ export default function AdminPage() {
         donorName: form.donorName,
         amount: Number(form.amount),
         type: form.type as 'in' | 'out',
+        category: form.category,
         description: form.description,
       });
       toast.success('Transaksi Berhasil!', {
         description: 'Telah dicatat secara permanen di blockchain.'
       });
-      setForm({ donorName: '', amount: '', type: 'in', description: '' });
+      setForm({ donorName: '', amount: '', type: 'in', category: '', description: '' });
     } catch {
       toast.error('Terjadi Kesalahan', { description: 'Gagal menyimpan transaksi ke blockchain.' });
     } finally {
@@ -132,6 +133,27 @@ export default function AdminPage() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-foreground/80">Kategori Transaksi</Label>
+                <Select
+                  value={form.category}
+                  onValueChange={(val) => setForm({ ...form, category: val as string })}
+                >
+                  <SelectTrigger className="h-12 bg-background">
+                    <SelectValue placeholder="Pilih Kategori (opsional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="wakaf tanah">Wakaf Tanah</SelectItem>
+                    <SelectItem value="wakaf uang">Wakaf Uang</SelectItem>
+                    <SelectItem value="zakat fitrah">Zakat Fitrah</SelectItem>
+                    <SelectItem value="zakat mal">Zakat Mal</SelectItem>
+                    <SelectItem value="infaq">Infaq</SelectItem>
+                    <SelectItem value="shadaqah">Shadaqah</SelectItem>
+                    <SelectItem value="dll">Lainnya (dll)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-3">

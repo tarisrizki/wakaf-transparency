@@ -17,6 +17,10 @@ export class CreateDonationDto {
 
   @IsString()
   @IsOptional()
+  category?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
 }
 
@@ -38,6 +42,7 @@ export class DonationsService {
         donorName: saved.donorName,
         amount: saved.amount,
         type: saved.type,
+        category: saved.category,
         description: saved.description,
       },
       saved.type === DonationType.IN ? 'DONATION_IN' : 'FUND_OUT',
