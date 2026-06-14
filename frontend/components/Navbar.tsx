@@ -2,12 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 
 import { ThemeToggle } from './ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
   // Don't show navbar on login page to keep it clean
   if (pathname === '/login') return null;
@@ -50,11 +53,44 @@ export default function Navbar() {
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/login" className="hidden md:inline-flex text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Login
           </Link>
+          <button className="md:hidden p-2 -mr-2 text-muted-foreground" onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden border-b bg-background overflow-hidden"
+          >
+            <nav className="flex flex-col px-6 py-4 space-y-4">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+              <Link href="/login" onClick={() => setIsOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Login
+              </Link>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

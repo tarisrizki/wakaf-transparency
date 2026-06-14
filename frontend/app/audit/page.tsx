@@ -5,13 +5,17 @@ import { donationsApi, Block } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { Link as LinkIcon, ShieldAlert, ShieldCheck, Database } from 'lucide-react';
+import { Link as LinkIcon, ShieldAlert, ShieldCheck, Database, Search } from 'lucide-react';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
 
 export default function AuditPage() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [verify, setVerify] = useState<{ valid: boolean; brokenAt?: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchHash, setSearchHash] = useState('');
+  
+  const verifiedBlock = searchHash ? blocks.find(b => b.hash === searchHash || b.previousHash === searchHash) : null;
 
   useEffect(() => {
     Promise.all([
@@ -79,6 +83,39 @@ export default function AuditPage() {
               </CardContent>
             </Card>
           )}
+
+          <Card className="mt-6 border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Search className="w-5 h-5 text-primary" />
+                Hash Verifier
+              </CardTitle>
+              <CardDescription>
+                Verifikasi integritas transaksi dengan memasukkan Hash dari transaksi (atau Previous Hash).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Input
+                placeholder="Masukkan SHA-256 Hash..."
+                value={searchHash}
+                onChange={(e) => setSearchHash(e.target.value)}
+                className="font-mono bg-background"
+              />
+              {searchHash && (
+                <div className="mt-3">
+                  {verifiedBlock ? (
+                    <div className="text-sm font-medium text-primary flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" /> Hash Valid — Ditemukan di Block #{verifiedBlock.blockIndex}
+                    </div>
+                  ) : (
+                    <div className="text-sm font-medium text-destructive flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4" /> Hash Tidak Ditemukan di Jaringan
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div 
