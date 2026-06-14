@@ -35,6 +35,7 @@ export interface Block {
 
 export const donationsApi = {
   getAll: () => api.get<Donation[]>('/donations'),
+  getById: (id: string) => api.get<{ donation: Donation; block: Block | null }>(`/donations/${id}`),
   getSummary: () => api.get<Summary>('/donations/summary'),
   getAudit: () => api.get<Block[]>('/donations/audit'),
   getVerify: () => api.get<{ valid: boolean; brokenAt?: number }>('/donations/verify'),
