@@ -52,8 +52,29 @@ export class DonationsService {
     return saved;
   }
 
-  async findAll(): Promise<Donation[]> {
-    return this.donationRepository.find({ order: { createdAt: 'DESC' } });
+  async findAll(filters?: { search?: string; type?: string; startDate?: string; endDate?: string }): Promise<Donation[]> {
+    const query = this.donationRepository.createQueryBuilder('donation')
+      .orderBy('donation.createdAt', 'DESC');
+
+    if (filters?.search) {
+      query.andWhere('donation.donorName ILIKE :search', { search: `%${filters.search}%` });
+    }
+
+    if (filters?.type && filters.type !== 'all') {
+      query.andWhere('donation.type = :type', { type: filters.type });
+    }
+
+    if (filters?.startDate) {
+      query.andWhere('donation.createdAt >= :startDate', { startDate: new Date(filters.startDate) });
+    }
+
+    if (filters?.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      query.andWhere('donation.createdAt <= :endDate', { endDate: end });
+    }
+
+    return query.getMany();
   }
 
   async findOne(id: string): Promise<{ donation: Donation; block: any }> {

@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+import { ThemeProvider } from '@/components/theme-provider';
+
 export const metadata: Metadata = {
   title: 'WakafChain - Transparansi Dana Wakaf',
   description: 'Sistem transparansi pengelolaan dana wakaf berbasis blockchain',
@@ -26,16 +28,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background selection:bg-primary/20 selection:text-primary`}>
-        <Navbar />
-        <div className="flex-1 flex flex-col relative w-full h-full">
-          {/* Subtle Background Gradient */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background -z-10" />
-          {children}
-        </div>
-        <Footer />
-        <Toaster position="bottom-right" richColors />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Navbar />
+          <div className="flex-1 flex flex-col relative w-full h-full">
+            {/* Subtle Background Gradient */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background -z-10" />
+            {children}
+          </div>
+          <Footer />
+          <Toaster position="bottom-right" richColors />
+        </ThemeProvider>
       </body>
     </html>
   );

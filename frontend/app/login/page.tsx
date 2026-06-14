@@ -12,25 +12,30 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!password) {
-      toast.error('Masukkan password terlebih dahulu');
+    if (!email || !password) {
+      toast.error('Masukkan email dan password terlebih dahulu');
       return;
     }
     setLoading(true);
     try {
+      let baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://web-production-800b5.up.railway.app/api';
+      // Next.js config might have trailing slashes or missing
+      if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+      
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/donations/admin-login`,
-        { password },
+        `${baseUrl}/v1/auth/email/login`,
+        { email, password },
       );
       document.cookie = `admin_token=${res.data.token}; path=/; max-age=86400`;
       toast.success('Login berhasil');
       window.location.href = '/admin';
     } catch {
-      toast.error('Password salah. Silakan coba lagi.');
+      toast.error('Kredensial salah. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -59,6 +64,18 @@ export default function LoginPage() {
               <CardDescription>Hanya pengelola yang memiliki akses untuk mengubah data blockchain.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="h-12 bg-background/50 focus-visible:ring-primary"
+                  disabled={loading}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Kata Sandi (Password)</Label>
                 <Input

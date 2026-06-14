@@ -1,6 +1,10 @@
 import {
-  Controller, Get, Post, Body, UnauthorizedException, Param,
+  Controller, Get, Post, Body, Param, Query, UseGuards
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../roles/roles.guard';
+import { Roles } from '../roles/roles.decorator';
+import { RoleEnum } from '../roles/roles.enum';
 import { DonationsService, CreateDonationDto } from './donations.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
 
@@ -11,18 +15,8 @@ export class DonationsController {
     private readonly blockchainService: BlockchainService,
   ) {}
 
-  @Post('admin-login')
-  adminLogin(@Body() body: { password: string }) {
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    if (body.password !== adminPassword) {
-      throw new UnauthorizedException('Password salah');
-    }
-    const token = Buffer.from(
-      JSON.stringify({ role: 'admin', ts: Date.now() }),
-    ).toString('base64');
-    return { token, message: 'Login berhasil' };
-  }
-
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(RoleEnum.admin)
   @Post()
   async create(@Body() dto: CreateDonationDto) {
     try {
@@ -34,8 +28,13 @@ export class DonationsController {
   }
 
   @Get()
-  findAll() {
-    return this.donationsService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.donationsService.findAll({ search, type, startDate, endDate });
   }
 
   @Get('summary')

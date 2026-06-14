@@ -5,6 +5,16 @@ const api = axios.create({
   timeout: 10000,
 });
 
+api.interceptors.request.use((config) => {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(new RegExp('(^| )admin_token=([^;]+)'));
+    if (match) {
+      config.headers.Authorization = `Bearer ${match[2]}`;
+    }
+  }
+  return config;
+});
+
 export interface Donation {
   id: string;
   donorName: string;
@@ -34,7 +44,7 @@ export interface Block {
 }
 
 export const donationsApi = {
-  getAll: () => api.get<Donation[]>('/donations'),
+  getAll: (filters?: any) => api.get<Donation[]>('/donations', { params: filters }),
   getById: (id: string) => api.get<{ donation: Donation; block: Block | null }>(`/donations/${id}`),
   getSummary: () => api.get<Summary>('/donations/summary'),
   getAudit: () => api.get<Block[]>('/donations/audit'),

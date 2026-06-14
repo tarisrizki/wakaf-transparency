@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
+import { ThemeToggle } from './ThemeToggle';
+
 export default function Navbar() {
   const pathname = usePathname();
 
@@ -47,6 +49,7 @@ export default function Navbar() {
           </nav>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
           <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Login
           </Link>

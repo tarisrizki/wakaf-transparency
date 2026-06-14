@@ -15,7 +15,10 @@ Live Demo: https://wakaf-transparency.vercel.app
 
 - Dashboard publik — transparansi dana real-time
 - Ringkasan keuangan (masuk, keluar, saldo)
-- Riwayat transaksi lengkap
+- Riwayat transaksi lengkap dengan filter, pencarian & pagination
+- Kategori transaksi untuk mempermudah pelacakan (Zakat, Sedekah, Operasional, dll)
+- Export PDF/Excel untuk laporan keuangan yang bisa diunduh
+- UI/UX Modern: Dark Mode, Skeleton Loading, dan Toast Notifications
 - Admin panel — input transaksi baru
 - Blockchain audit trail — setiap transaksi punya hash unik
 - Verifikasi integritas chain — deteksi manipulasi otomatis
