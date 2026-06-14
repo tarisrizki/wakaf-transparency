@@ -20,11 +20,11 @@ export default function AdminPage() {
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (!token) {
-      router.push('/login');
+      window.location.href = '/login';
     } else {
       setIsAuth(true);
     }
-  }, [router]);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
